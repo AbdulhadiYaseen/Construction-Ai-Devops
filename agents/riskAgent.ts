@@ -21,25 +21,6 @@ export async function riskAgent(
       model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: SchemaType.ARRAY,
-          description: "List of identified risk hazards for the construction project.",
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              riskType: {
-                type: SchemaType.STRING,
-                description: "A concise description of the hazard (e.g., Extreme Rainfall Degradation).",
-              },
-              severity: {
-                type: SchemaType.STRING,
-                enum: ["High", "Medium", "Low"],
-                description: "The critical operational severity categorization.",
-              },
-            },
-            required: ["riskType", "severity"],
-          },
-        },
       },
     });
 
@@ -49,6 +30,10 @@ export async function riskAgent(
       
       Project Name: ${projectName}
       Project Description: ${projectDescription}
+
+      Return a JSON array containing exactly 2 objects. Each object MUST have these exact properties:
+      - "riskType": (string) A concise description of the hazard (e.g., "Extreme Rainfall Degradation").
+      - "severity": (string) The critical operational severity categorization: "High", "Medium", or "Low".
     `;
 
     const result = await model.generateContent(prompt);

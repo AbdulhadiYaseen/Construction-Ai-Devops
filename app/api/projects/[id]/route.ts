@@ -1,11 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id, 10);
 
@@ -46,6 +55,14 @@ export async function DELETE(
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id, 10);
 

@@ -1,11 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth";
 
 export async function PATCH(
   req: Request,
   context: any
 ) {
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     // Secure unwrap of dynamic identifier parameters
     const resolvedParams = await context.params;
     const id = parseInt(resolvedParams.id, 10);

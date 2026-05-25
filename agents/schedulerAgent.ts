@@ -23,32 +23,6 @@ export async function schedulerAgent(
       model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: SchemaType.ARRAY,
-          description: "List of highly specialized optimized construction tasks.",
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              title: {
-                type: SchemaType.STRING,
-                description: "Specific, clear task title related to construction operations.",
-              },
-              status: {
-                type: SchemaType.STRING,
-                description: "Operational state: Pending or In Progress.",
-              },
-              assignedTo: {
-                type: SchemaType.STRING,
-                description: "Specific specialized handler (can be an AI node or professional role).",
-              },
-              deadline: {
-                type: SchemaType.STRING,
-                description: "Relative completion constraint, e.g., T+3 Days or T+10 Days.",
-              },
-            },
-            required: ["title", "status", "assignedTo", "deadline"],
-          },
-        },
       },
     });
 
@@ -58,6 +32,12 @@ export async function schedulerAgent(
       
       Project Name: ${projectName}
       Project Description: ${projectDescription}
+
+      Return a JSON array containing exactly 2 objects. Each object MUST have these exact properties:
+      - "title": (string) Specific, clear task title related to construction operations.
+      - "status": (string) Operational state: "Pending" or "In Progress".
+      - "assignedTo": (string) Specific specialized handler (AI node or professional role).
+      - "deadline": (string) Relative completion constraint, e.g., "T+3 Days" or "T+10 Days".
     `;
 
     const result = await model.generateContent(prompt);

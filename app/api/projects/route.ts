@@ -1,8 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const projects = await prisma.project.findMany({
       orderBy: {
         createdAt: "desc",
@@ -29,6 +38,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { name, description } = body;
 

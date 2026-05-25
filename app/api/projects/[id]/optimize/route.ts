@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { schedulerAgent } from "@/agents/schedulerAgent";
 import { riskAgent } from "@/agents/riskAgent";
 import { decisionAgent } from "@/agents/decisionAgent";
+import { verifyAuth } from "@/lib/auth";
 
 export async function POST(req: Request, context: any) {
   // Compliant App Router dynamic context resolution
@@ -10,6 +11,14 @@ export async function POST(req: Request, context: any) {
   const projectId = parseInt(resolvedParams.id, 10);
 
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { type } = body; // Accepts "tasks" or "risks"
 

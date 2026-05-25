@@ -1,8 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth";
 
 export async function GET(req: Request) {
   try {
+    const userId = await verifyAuth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q");
 
