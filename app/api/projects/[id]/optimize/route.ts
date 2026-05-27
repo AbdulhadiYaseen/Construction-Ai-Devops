@@ -26,10 +26,15 @@ export async function POST(req: Request, context: any) {
       return NextResponse.json({ success: false, error: "Invalid entity identifier" }, { status: 400 });
     }
 
-    // Retrieve project details to feed directly into Gemini context pipelines
+    // Retrieve project details to feed directly into Gemini context pipelines along with existing entries
     const project = await prisma.project.findUnique({
       where: { id: projectId },
-      select: { name: true, description: true },
+      select: { 
+        name: true, 
+        description: true,
+        risks: { select: { riskType: true } },
+        tasks: { select: { title: true } }
+      },
     });
 
     if (!project) {
@@ -37,37 +42,54 @@ export async function POST(req: Request, context: any) {
     }
 
     if (type === "tasks") {
-      // 🤖 Invoke Gemini Scheduler Sub-Agent
-      const optimizedTasks = await schedulerAgent(project.name, project.description);
+      const existingTitles = project.tasks.map(t => t.title);
+      
+      // 🤖 Invoke Gemini Scheduler Sub-Agent with existing tasks context
+      const optimizedTasks = await schedulerAgent(project.name, project.description, existingTitles);
 
-      // Atomically inject dynamically synthesized tasks into the tracking grid
-      await prisma.project.update({
-        where: { id: projectId },
-        data: {
-          tasks: {
-            create: optimizedTasks,
+      // Filter out tasks whose titles already exist in the database (case-insensitive check)
+      const existingTitlesSet = new Set(existingTitles.map(t => t.toLowerCase().trim()));
+      const uniqueTasks = optimizedTasks.filter(t => !existingTitlesSet.has(t.title.toLowerCase().trim()));
+
+      // Atomically inject only new, dynamically synthesized tasks into the tracking grid
+      if (uniqueTasks.length > 0) {
+        await prisma.project.update({
+          where: { id: projectId },
+          data: {
+            tasks: {
+              create: uniqueTasks,
+            },
           },
-        },
-      });
+        });
+      }
     } else if (type === "risks") {
-      // 🤖 Invoke Gemini Risk Inspection Agent
-      const generatedRisks = await riskAgent(project.name, project.description);
+      const existingRiskTypes = project.risks.map(r => r.riskType);
 
-      // 🤖 Invoke Gemini Operator Agent passing active risk context
-      const generatedDecisions = await decisionAgent(project.name, project.description, generatedRisks);
+      // 🤖 Invoke Gemini Risk Inspection Agent with existing risks context
+      const generatedRisks = await riskAgent(project.name, project.description, existingRiskTypes);
 
-      // Atomically insert dynamic hazards and autonomous log tracks
-      await prisma.project.update({
-        where: { id: projectId },
-        data: {
-          risks: {
-            create: generatedRisks,
+      // Filter out risks whose types already exist in the database (case-insensitive check)
+      const existingRiskTypesSet = new Set(existingRiskTypes.map(r => r.toLowerCase().trim()));
+      const uniqueRisks = generatedRisks.filter(r => !existingRiskTypesSet.has(r.riskType.toLowerCase().trim()));
+
+      // Only invoke decision agent and write to database if new hazards are identified
+      if (uniqueRisks.length > 0) {
+        // 🤖 Invoke Gemini Operator Agent passing active risk context
+        const generatedDecisions = await decisionAgent(project.name, project.description, uniqueRisks);
+
+        // Atomically insert dynamic hazards and autonomous log tracks
+        await prisma.project.update({
+          where: { id: projectId },
+          data: {
+            risks: {
+              create: uniqueRisks,
+            },
+            decisions: {
+              create: generatedDecisions,
+            },
           },
-          decisions: {
-            create: generatedDecisions,
-          },
-        },
-      });
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { executeAgentWithMcp } from "../src/lib/mcpClient";
 
 export interface GeneratedTask {
   title: string;
@@ -9,7 +9,8 @@ export interface GeneratedTask {
 
 export async function schedulerAgent(
   projectName: string,
-  projectDescription: string
+  projectDescription: string,
+  existingTasks: string[] = []
 ): Promise<GeneratedTask[]> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -18,33 +19,51 @@ export async function schedulerAgent(
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    });
+    const existingContext = existingTasks.length > 0
+      ? `Existing Tasks already scheduled for this project (do NOT repeat, mention, or duplicate any of these tasks): ${JSON.stringify(existingTasks)}`
+      : "";
 
-    const prompt = `
+    const systemInstruction = `
       You are a digital Project Foreman specialized in high-efficiency construction scheduling.
       Analyze the project footprint and output exactly 2 high-value, specialized operational tasks that will optimize delivery.
       
-      Project Name: ${projectName}
-      Project Description: ${projectDescription}
+      ${existingContext}
+      
+      CRITICAL INSTRUCTION: You MUST use the available MCP tools to gather safety compliance rules before finalizing the tasks.
+      - Call 'get_safety_regulations' using the appropriate category ('HighRise', 'Marine', 'Excavation', 'Infrastructure', 'Residential').
+      - Call 'get_weather_risk' with realistic mock coordinates matching the project type to check if weather constraints (like wind speed) should defer certain crane or pour tasks.
 
-      Return a JSON array containing exactly 2 objects. Each object MUST have these exact properties:
-      - "title": (string) Specific, clear task title related to construction operations.
-      - "status": (string) Operational state: "Pending" or "In Progress".
-      - "assignedTo": (string) Specific specialized handler (AI node or professional role).
-      - "deadline": (string) Relative completion constraint, e.g., "T+3 Days" or "T+10 Days".
+      Incorporate the regulatory and safety requirements you retrieved into the task titles, deadlines, or handler assignments (e.g. adding specific inspection tasks or weather monitoring milestones).
+      Return ONLY a raw JSON array containing exactly 2 objects. Do NOT wrap in markdown code blocks or add text wrapper. Each object MUST have these properties:
+      - "title": (string) Specific task title incorporating regulatory or safety parameters, completely unique and not matching any existing tasks.
+      - "status": (string) "Pending" or "In Progress".
+      - "assignedTo": (string) Specific specialized handler role (e.g., "Safety Officer", "OSHA Inspector Node", "Crane Commander").
+      - "deadline": (string) Relative completion constraint, e.g. "T+3 Days" or "T+10 Days".
     `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    return JSON.parse(text) as GeneratedTask[];
+    const prompt = `
+      Project Name: ${projectName}
+      Project Description: ${projectDescription}
+    `;
+
+    const responseText = await executeAgentWithMcp(systemInstruction, prompt);
+    
+    // Sanitize markdown tags
+    let cleanJson = responseText.trim();
+    if (cleanJson.startsWith("```json")) {
+      cleanJson = cleanJson.slice(7);
+    }
+    if (cleanJson.startsWith("```")) {
+      cleanJson = cleanJson.slice(3);
+    }
+    if (cleanJson.endsWith("```")) {
+      cleanJson = cleanJson.slice(0, -3);
+    }
+    cleanJson = cleanJson.trim();
+
+    return JSON.parse(cleanJson) as GeneratedTask[];
   } catch (error) {
-    console.error("schedulerAgent failed to query Gemini:", error);
+    console.error("schedulerAgent failed to execute with MCP:", error);
     return getFallbackTasks();
   }
 }
@@ -65,3 +84,4 @@ function getFallbackTasks(): GeneratedTask[] {
     },
   ];
 }
+
