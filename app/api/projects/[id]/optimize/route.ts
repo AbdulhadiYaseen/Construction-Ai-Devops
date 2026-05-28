@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { schedulerAgent } from "@/agents/schedulerAgent";
-import { riskAgent } from "@/agents/riskAgent";
-import { decisionAgent } from "@/agents/decisionAgent";
 import { verifyAuth } from "@/lib/auth";
+import { coordinateA2ASynthesis } from "../../../../../src/lib/a2aProtocol";
+import { auditAgentOutput } from "../../../../../src/lib/ethicsGuardrail";
 
 export async function POST(req: Request, context: any) {
   // Compliant App Router dynamic context resolution
@@ -26,7 +25,7 @@ export async function POST(req: Request, context: any) {
       return NextResponse.json({ success: false, error: "Invalid entity identifier" }, { status: 400 });
     }
 
-    // Retrieve project details to feed directly into Gemini context pipelines along with existing entries
+    // Retrieve project details along with existing entries for dynamic contextual planning
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: { 
@@ -41,17 +40,42 @@ export async function POST(req: Request, context: any) {
       return NextResponse.json({ success: false, error: "Project footprint not found" }, { status: 404 });
     }
 
+    const existingTitles = project.tasks.map(t => t.title);
+    const existingRiskTypes = project.risks.map(r => r.riskType);
+
+    // 🤖 Invoke the A2A Protocol Broker (Syllabus Week 13) to coordinate agent exchange
+    const a2aResult = await coordinateA2ASynthesis(
+      project.name,
+      project.description,
+      existingTitles,
+      existingRiskTypes
+    );
+
+    // ⚖️ Intercept and audit outputs via the Ethics & Safety Guardrail Auditor (Syllabus Week 16)
+    const auditResult = auditAgentOutput(
+      a2aResult.tasks,
+      a2aResult.risks,
+      project.name,
+      project.description
+    );
+
+    // Format rich metadata combining the A2A messaging log and Ethical safety audit report
+    const a2aAuditReport = [
+      `=== [Syllabus Week 13] A2A MULTI-AGENT PROTOCOL DIALOGUE ===`,
+      ...a2aResult.a2aConversationLog,
+      `\n=== [Syllabus Week 16] ETHICS & LABOR SAFETY AUDIT TRAIL ===`,
+      `Compliance Trust Score: ${auditResult.score}/100 | Passed: ${auditResult.passed ? "YES" : "NO"}`,
+      ...auditResult.auditLogs
+    ].join("\n");
+
     if (type === "tasks") {
-      const existingTitles = project.tasks.map(t => t.title);
-      
-      // 🤖 Invoke Gemini Scheduler Sub-Agent with existing tasks context
-      const optimizedTasks = await schedulerAgent(project.name, project.description, existingTitles);
-
-      // Filter out tasks whose titles already exist in the database (case-insensitive check)
+      // Deduplicate corrected tasks against existing titles
       const existingTitlesSet = new Set(existingTitles.map(t => t.toLowerCase().trim()));
-      const uniqueTasks = optimizedTasks.filter(t => !existingTitlesSet.has(t.title.toLowerCase().trim()));
+      const uniqueTasks = auditResult.correctedTasks.filter(
+        t => !existingTitlesSet.has(t.title.toLowerCase().trim())
+      );
 
-      // Atomically inject only new, dynamically synthesized tasks into the tracking grid
+      // Atomically inject tasks and detailed audit tracking trace as an autonomous decision log
       if (uniqueTasks.length > 0) {
         await prisma.project.update({
           where: { id: projectId },
@@ -59,25 +83,24 @@ export async function POST(req: Request, context: any) {
             tasks: {
               create: uniqueTasks,
             },
+            decisions: {
+              create: {
+                action: `[A2A Protocol & Safety Audit] Tasks Schedule Refinement`,
+                reason: a2aAuditReport,
+              },
+            },
           },
         });
       }
     } else if (type === "risks") {
-      const existingRiskTypes = project.risks.map(r => r.riskType);
-
-      // 🤖 Invoke Gemini Risk Inspection Agent with existing risks context
-      const generatedRisks = await riskAgent(project.name, project.description, existingRiskTypes);
-
-      // Filter out risks whose types already exist in the database (case-insensitive check)
+      // Deduplicate corrected risks against existing types
       const existingRiskTypesSet = new Set(existingRiskTypes.map(r => r.toLowerCase().trim()));
-      const uniqueRisks = generatedRisks.filter(r => !existingRiskTypesSet.has(r.riskType.toLowerCase().trim()));
+      const uniqueRisks = auditResult.correctedRisks.filter(
+        r => !existingRiskTypesSet.has(r.riskType.toLowerCase().trim())
+      );
 
-      // Only invoke decision agent and write to database if new hazards are identified
+      // Atomically inject unique hazards and unified audit report
       if (uniqueRisks.length > 0) {
-        // 🤖 Invoke Gemini Operator Agent passing active risk context
-        const generatedDecisions = await decisionAgent(project.name, project.description, uniqueRisks);
-
-        // Atomically insert dynamic hazards and autonomous log tracks
         await prisma.project.update({
           where: { id: projectId },
           data: {
@@ -85,7 +108,10 @@ export async function POST(req: Request, context: any) {
               create: uniqueRisks,
             },
             decisions: {
-              create: generatedDecisions,
+              create: {
+                action: `[A2A Protocol & Safety Audit] Dynamic Environmental Risk Scan`,
+                reason: a2aAuditReport,
+              },
             },
           },
         });

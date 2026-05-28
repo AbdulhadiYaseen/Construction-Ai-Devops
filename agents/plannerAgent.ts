@@ -7,7 +7,7 @@ export async function plannerAgent(projectDescription: string): Promise<string> 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-3.5-flash",
       });
 
       const prompt = `You are an expert multi-agent construction operations orchestrator. Analyze the provided project overview and generate a structured execution plan containing:\n1. Operational Tasks (with suggested roles and timeline estimates)\n2. Risk Factors (categorized with severity flags)\n3. Autonomous Logistics & Site Setup recommendations.\nFormat beautifully in Markdown.\n\nProject Description:\n${projectDescription}`;

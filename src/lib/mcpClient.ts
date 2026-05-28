@@ -94,7 +94,7 @@ export async function executeAgentWithMcp(
     // 5. Build the Gemini generative model with the loaded tools
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.5-flash",
       systemInstruction: systemInstruction,
       tools: functionDeclarations.length > 0 ? [{ functionDeclarations }] : undefined,
     });
