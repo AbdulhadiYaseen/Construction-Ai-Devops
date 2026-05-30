@@ -1,0 +1,64 @@
+name: Construction AI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Code Validation & Quality Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Env
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Linters & Checks
+        run: npm run lint
+
+      - name: Dry Run Build Check
+        run: npm run build
+
+  deploy:
+    name: Continuous Deployment to Cloud
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Deployment for AWS EC2 Docker SSH Deploy
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/construction-ai
+            git pull origin main
+            
+            # Injecting production keys securely
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            
+            # Spin down existing container infrastructure and rebuild cleanly
+            docker-compose down
+            docker-compose up -d --build
+            
+            # Execute database updates via Prisma schema synchronizer
+            docker-compose exec -T app npx prisma db push
