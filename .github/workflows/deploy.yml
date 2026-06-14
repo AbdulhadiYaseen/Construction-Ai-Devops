@@ -58,6 +58,6 @@ jobs:
             docker compose up -d --build
             
             
-            npx prisma db push
+            docker compose exec -T app npx prisma db push --schema=/app/prisma/schema.prisma
 
             
