@@ -18,6 +18,25 @@ services:
     networks:
       - production-network
 
+  # One-off Prisma migration runner.
+  # Uses the "builder" image (full node_modules) so the Prisma CLI and all its
+  # dependencies are present. Not started by `up`; run on demand via:
+  #   docker compose run --rm migrate
+  migrate:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    environment:
+      DATABASE_URL: mysql://construction_user:secure_db_password@db:3306/construction_ai
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - production-network
+    command: npx prisma db push --schema=/app/prisma/schema.prisma
+
   # MySQL Production Database
   db:
     image: mysql:8.0
