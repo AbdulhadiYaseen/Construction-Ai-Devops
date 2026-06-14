@@ -57,4 +57,4 @@ jobs:
             docker compose down
             docker compose up -d --build
             sleep 30
-            docker compose exec -T app npx prisma db push --schema=/app/prisma/schema.prisma
+            docker compose exec -T app node /app/node_modules/prisma/build/index.js db push --schema=/app/prisma/schema.prisma
