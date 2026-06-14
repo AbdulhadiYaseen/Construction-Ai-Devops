@@ -32,7 +32,7 @@ jobs:
       - name: Dry Run Build Check
         run: npm run build
 
-  deploy:
+    deploy:
     name: Continuous Deployment to Cloud
     needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -49,16 +49,17 @@ jobs:
           username: ubuntu
           key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
           script: |
-            cd /home/ubuntu/construction-ai
+            # 1. Move into the exact case-sensitive directory
+            cd /home/ubuntu/Construction-Ai-Devops
             git pull origin main
             
-            # Injecting production keys securely
+            # 2. Injecting production keys securely
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
             
-            # Spin down existing container infrastructure and rebuild cleanly
-            docker-compose down
-            docker-compose up -d --build
+            # 3. Spin down using modern v2 syntax and rebuild cleanly
+            docker compose down
+            docker compose up -d --build
             
-            # Execute database updates via Prisma schema synchronizer
-            docker-compose exec -T app npx prisma db push
+            # 4. Execute database updates via Prisma (Double check if service name is 'app')
+            docker compose exec -T app npx prisma db push

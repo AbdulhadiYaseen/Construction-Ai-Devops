@@ -1,0 +1,210 @@
+DEVOPS syllabus
+
+
+1.  AWS Lambda
+
+-   Serverless computing concept
+-   How Lambda works (event-driven execution)
+-   Lambda vs EC2
+-   Common use cases
+-   Limitations (timeout, cold start)
+
+2.  Amazon SNS
+
+-   Pub/Sub model
+-   Topics and subscribers
+-   Supported protocols (Email, SMS, HTTP)
+-   Real-world use cases
+-   Basic difference between SNS and SQS
+
+3.  Amazon SQS
+
+-   Message queue concept
+-   Purpose of queues in systems
+-   Standard vs FIFO queues
+-   Visibility timeout
+-   Decoupling services
+-   Use cases
+
+4.  ECS (Elastic Container Service)
+
+-   Container orchestration basics
+-   ECS overview
+-   ECS vs Docker (local)
+-   Why ECS is used in production
+
+5.  ECS Components
+
+-   Task Definition
+-   Cluster
+-   Service vs Task
+
+6.  Security Groups
+
+-   Definition and purpose
+-   Inbound vs outbound rules
+-   Traffic control
+-   Difference from firewall
+-   Basic rule examples
+
+============================== APPLIED DEVOPS (ADVANCED LEVEL)
+==============================
+
+1.  Event-Driven Architecture
+
+-   Concept of event-driven systems
+-   Lambda + SNS workflow
+-   Real-world examples
+
+2.  Lambda + SQS Integration
+
+-   Asynchronous processing
+-   Queue-triggered Lambda
+-   Retry mechanism
+-   Failure handling
+
+3.  SNS vs SQS
+
+-   When to use SNS
+-   When to use SQS
+-   Fan-out pattern
+-   Service decoupling
+
+4.  Microservices Communication
+
+-   Sync vs async communication
+-   Use of queues
+-   Basic architecture understanding
+
+5.  ECR (Elastic Container Registry)
+
+-   Purpose of ECR
+-   Storing Docker images
+-   Integration with ECS
+
+6.  ECS Deployment Concepts
+
+-   Task Definition (detailed)
+-   Cluster role
+-   Task vs Service
+-   Scaling basics
+
+7.  Security Groups (Advanced)
+
+-   Designing rules for scenarios
+-   Restricting SSH access
+-   Allowing HTTP/HTTPS
+-   Effects of misconfiguration
+
+8.  System Design Thinking
+
+-   Designing architectures using AWS services
+-   Understanding service selection (WHY to use each service)
+
+
+
+
+
+1)  Amazon EC2 (Elastic Compute Cloud)
+
+-   What is EC2?
+-   Why cloud servers are preferred over physical servers
+-   Scalability in EC2
+-   Horizontal vs Vertical scaling
+-   Basic understanding of instances
+
+2)  VPC (Virtual Private Cloud)
+
+-   What is VPC?
+-   Why infrastructure is isolated in VPC
+-   Public subnet vs Private subnet (basic idea)
+-   Security benefits of VPC
+
+3)  Virtual Machine vs Docker
+
+-   Architecture difference
+-   Hypervisor vs container runtime
+-   Resource usage difference
+-   Startup time difference
+-   Does Docker create its own OS?
+-   When to use VM vs Docker
+
+4)  Load Balancing
+
+-   What is load balancing?
+-   Why load balancing is needed in production
+-   High availability concept
+-   Load balancing strategies (Round Robin, Least Connections)
+
+5)  Proxy vs Reverse Proxy
+
+-   What is Proxy?
+-   What is Reverse Proxy?
+-   Real world examples (e.g., Nginx)
+-   How reverse proxy helps in security and scaling
+
+6)  Redis Caching
+
+-   Why caching is needed
+-   Where Redis is placed in architecture
+-   At least TWO caching strategies:
+    -   Cache Aside (Lazy Loading)
+    -   Write Through
+    -   Write Back
+    -   TTL-based caching
+-   Advantages of caching
+-   Risks of caching (stale data)
+
+7)  PostgreSQL Connection Limits
+
+-   What happens when DB connections are exhausted
+-   What is connection pooling
+-   Why connection pooling is important
+-   Architecture-level solutions (load balancing, read replicas)
+-   Application-level solutions (reusing connections, limiting
+    concurrency)
+
+8)  Read Replica vs Primary Database
+
+-   What is Primary (Write) database
+-   What is Read replica
+-   Basic idea of replication
+-   Why read replicas improve performance
+-   When read replicas are useful
+
+9)  Kafka / Queue Systems
+
+-   Why queue systems are used
+-   Synchronous vs Asynchronous processing
+-   Producer and Consumer concept
+-   How queues improve scalability
+-   How queues improve user experience
+-   Problems without queues in high-traffic systems
+
+10) System Design Thinking
+
+-   Thinking in architecture terms
+-   Separating application, database, and cache layers
+-   Identifying bottlenecks
+-   Basic scaling decisions
+
+
+
+
+AWS Cloud Infrastructure — EC2 (lifecycle, instance types), Auto Scaling, horizontal vs vertical scaling, Elastic IP, and AMI basics.
+
+Docker & Containerization — why Docker exists, containerization concept, Docker architecture, images vs containers, Docker Engine, container lifecycle, and the full Dockerfile (FROM, RUN, COPY, WORKDIR, CMD, ENTRYPOINT, layer caching).
+
+AWS Lambda & Serverless — serverless concept, event-driven architecture, Lambda lifecycle, stateless execution, cold start problem, memory allocation, timeout and retry behavior, scaling, cost optimization, and when not to use Lambda.
+
+SQS & Message Queues — producer-consumer model, async processing, visibility timeout, Dead Letter Queue (DLQ), retry mechanisms, and queue durability.
+
+Database Scaling & Indexing — why indexes improve performance, B-Tree basics, clustered vs non-clustered indexes, composite indexes, index tradeoffs, over-indexing, query optimization, and read replicas.
+
+Backend Security — JWT basics, session vs token authentication, API key authentication, and firewall/security group concepts.
+
+Notification Systems — email/SMS/push notifications, queue-based notification systems, retry mechanisms, failure handling, bulk notifications, fanout, and throttling.
+
+Reliability & Failure Engineering — retry mechanisms, exponential backoff, retry storms, DLQ handling, high availability, redundancy, and failover.
+
+Comparative Theory — Synchronous vs Asynchronous processing, Docker vs VM, SQL vs Redis, Horizontal vs Vertical scaling.
